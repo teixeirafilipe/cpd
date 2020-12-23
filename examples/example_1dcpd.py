@@ -54,10 +54,8 @@ print(f"Score on the Test Set:  {rf_model.score(X_test,y_test):+6.4f}")
 
 pd_data = Partial_Dependence(rf_model, X_train, ['race'])
 
-print(pd_data.x_name)
-print(pd_data.x_vals)
+print(pd_data._ascii())
 
-print(pd_data.y_name)
-print(pd_data.y_vals)
+pd_data.print_ascii()
 
-print(pd_data.response)
+pd_data.to_csv('tmp.csv')

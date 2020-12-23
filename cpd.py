@@ -22,6 +22,12 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+#TODO:
+# * Print PD as a LaTeX table
+# * Plot PD using MatPlotLib
+# * Save MatPlotLib's plot of PD
+# * Output a GnuPlot script for the plot
+
 """
 CPD - Complex Partial Dependence for Scikit-learn
 
@@ -29,6 +35,7 @@ CPD is a small Python module which generates partial dependence graphics and
 tables for models.
 """
 
+import csv
 import numpy as np
 import pandas as pd
 from sklearn.inspection import partial_dependence
@@ -48,15 +55,15 @@ class Partial_Dependence():
             self._run_2DCPD(model,data,cat_features)
         elif ncf == 1 and nrf == 1:
             # 2 dimensional PD between a categorical and a real variable
-            self.mode = '2DCRPD'
+            self._mode = '2DCRPD'
             self._run_2DCRPD(model, data, cat_features[0], real_features[0])
         elif ncf == 0 and nrf == 1:
             # multi-dimensional real PD with search
-            self.mode = 'MDRPDWS' 
+            self._mode = 'MDRPDWS' 
             self._run_MDRPDWS(model, data, real_features[0])
         elif ncf == 0 and nrf > 1:
             # multi-dimensional real PD without search
-            self.mode = 'MDRPD' 
+            self._mode = 'MDRPD' 
             self._run_MDRPD(model, data, real_features)
         else:
             raise NotImplementedError("Requested combination of variables not implemented")
@@ -118,15 +125,29 @@ class Partial_Dependence():
         self.y_vals = self._feature_cleanup(feature_keys[1], y_names)
         self.response = response
     def _run_2DCRPD(self, model, data, cat_feature, real_feature):
-        raise NotImplementedError("This feature is not implemented.")
-        pass
+        x_names = self._search_features(data, cat_feature)
+        x_vals  = self._feature_cleanup(cat_feature, x_names) 
+        response = list()
+        # set the data so that all features share the same range
+        pseudo_data = data.copy()
+        pseudo_data.loc[0, real_feature]=data[real_feature].min()
+        pseudo_data.loc[1, real_feature]=data[real_feature].max()
+        for i, xn in enumerate(x_names):
+            pdep = partial_dependence(model, pseudo_data, [xn,real_feature])
+            for j,y_val in enumerate(pdep[1][1]):
+                response.append([x_vals[i],y_val,pdep[0][0][1][j]])
+        # expose data to the object's namespace
+        self.response = response
+        self.x_name = cat_feature.capitalize()
+        self.x_vals = x_vals
+        self.y_name = real_feature.capitalize()
+        self.y_vals = None
     def _run_MDRPDWS(self, model, data, feature_key):
         feature_names = self._search_features(data,feature_key)
         self._run_MDRPD(model, data, self._search_features(data,feature_key))
         self.x_name = feature_key.capitalize()
         self.y_name = feature_key.capitalize() + ' Value'
     def _run_MDRPD(self, model, data, real_features):
-        print(real_features)
         # set the data so that all features share the same range
         pseudo_data = data.copy()
         bounds=( min(data.loc[:,tuple(real_features)].min()), max(data.loc[:,tuple(real_features)].max()))
@@ -145,13 +166,170 @@ class Partial_Dependence():
                 response.append([x_vals[i], ypos, pdep[0][0][j]])
         # expose data to the object's namespace
         self.response = np.array(response)
-        print('***')
-        print(self._find_common_prefix(real_features))
-        print('***')
         self.x_name = self._find_common_prefix(real_features)
         self.x_vals = x_vals
         self.y_name = self.x_name + ' Values'
         self.y_vals = None
+    def _get_col_widths(self):
+        o=[]
+        if self._mode=='1DCPD':
+            o.append(2+max(len(self.x_name),max([len(x) for x in self.x_vals])))
+            o.append(2+len('Model Response'))
+        elif self._mode=='2DCPD':
+            o.append(2+max(len(self.x_name)+len(self.y_name),max([len(x) for x in self.x_vals])))
+            for yv in self.y_vals:
+                o.append(2+max(8,len(yv)))
+        elif self._mode=='2DCRPD':
+            o.append(2+max(8,len(self.y_name)))
+            for xv in self.x_vals:
+                o.append(2+max(8,len(xv)))
+        elif self._mode=='MDRPDWS' or self._mode=='MDRPD':
+            o.append(2+max(8,len(self.x_name)))
+            o.append(2+max(8,len(self.y_name)))
+            o.append(2+max(8,len("Model Response")))
+        else:
+            raise NotImplementedError(f"Unknown mode: {self._mode}")
+        return o
+    def _ascii(self, **kwargs):
+        s=""
+        col_widths = self._get_col_widths()
+        if self._mode=='1DCPD':
+            s += '-'*col_widths[0] + ' ' + '-'*col_widths[1] + '\n'
+            s += f"{self.x_name:^{col_widths[0]}s}  Model Response\n"
+            s += '-'*col_widths[0] + ' ' + '-'*col_widths[1] + '\n'
+            for i,x in enumerate(self.x_vals):
+                s += f"{x:^{col_widths[0]}s} {self.response[i]:+{col_widths[1]}.{col_widths[1]-5}g}\n"
+            s += '-'*col_widths[0] + ' ' + '-'*col_widths[1] + '\n'
+        elif self._mode=='2DCPD':
+            for cw in col_widths:
+                s += '-'*cw + ' '
+            s += '\n'
+            t = f"{self.x_name}/{self.y_name}"
+            s += f"{t:^{col_widths[0]}s} "
+            for i,cn in enumerate(self.y_vals):
+                s += f"{cn:^{col_widths[i+1]}s} "
+            s += '\n'
+            for cw in col_widths:
+                s += '-'*cw + ' '
+            s += '\n'
+            for i, rv in enumerate(self.x_vals):
+                s += f"{rv:^{col_widths[0]}s} "
+                for j, cv in enumerate(self.y_vals):
+                    s += f"{self.response[i,j]:+{col_widths[j+1]}.{col_widths[j+1]-5}g} "
+                s += '\n'
+            for cw in col_widths:
+                s += '-'*cw + ' '
+            s += '\n'
+        elif self._mode=='2DCRPD':
+            for cw in col_widths:
+                s += '-'*cw + ' '
+            s += '\n'
+            s += f"{self.y_name:^{col_widths[0]}s} "
+            for i,xv in enumerate(self.x_vals):
+                s += f"{xv:^{col_widths[i+1]}s} "
+            s += '\n'
+            for cw in col_widths:
+                s += '-'*cw + ' '
+            s += '\n'
+            for i,yv in enumerate(list(set([x[1] for x in self.response]))):
+                s += f"{yv:{col_widths[0]}.{col_widths[0]-5}g} "
+                for j, xv in enumerate(self.x_vals):
+                    r = [x for x in self.response if x[0]==xv and x[1]==yv]
+                    if r:
+                        s += f"{r[0][2]:+{col_widths[j+1]}.{col_widths[j-1]-5}g} "
+                    else:
+                        s += ' '*(col_widths[j+1]+1)
+                s += '\n'
+            for cw in col_widths:
+                s += '-'*cw + ' '
+            s += '\n'
+        elif self._mode=='MDRPDWS' or self._mode=='MDRPD':
+            for cw in col_widths:
+                s += '-'*cw + ' '
+            s += '\n'
+            s += f"{self.x_name:^{col_widths[0]}s} "
+            s += f"{self.y_name:^{col_widths[1]}s} "
+            t="Model Response"
+            s += f"{t:^{col_widths[2]}s} "
+            s += '\n'
+            for l in self.response:
+                for i in range(len(col_widths)):
+                    s += f"{l[i]:{col_widths[i]}.{col_widths[i]-5}g} "
+                s += '\n'
+            for cw in col_widths:
+                s += '-'*cw + ' '
+            s += '\n'
+        else:
+            raise NotImplementedError(f"Unknown mode: {self._mode}")
+        return s
+    def print_ascii(self, **kwargs):
+        print(self._ascii(**kwargs))
+    def __repr__(self):
+        return self._ascii()
+    def plot(self, fn, **kwargs):
+        #TODO
+        if self._mode=='1DCPD':
+            pass
+        elif self._mode=='2DCPD':
+            pass
+        elif self._mode=='2DCRPD':
+            pass
+        elif self._mode=='MDRPDWS' or self._mode=='MDRPD':
+            pass
+        else:
+            raise NotImplementedError(f"Unknown mode: {self._mode}")
+    def to_gnuplot(self, fn, **kwargs):
+        #TODO
+        if self._mode=='1DCPD':
+            pass
+        elif self._mode=='2DCPD':
+            pass
+        elif self._mode=='2DCRPD':
+            pass
+        elif self._mode=='MDRPDWS' or self._mode=='MDRPD':
+            pass
+        else:
+            raise NotImplementedError(f"Unknown mode: {self._mode}")
+    def to_latex(self, fn, **kwargs):
+        #TODO
+        if self._mode=='1DCPD':
+            pass
+        elif self._mode=='2DCPD':
+            pass
+        elif self._mode=='2DCRPD':
+            pass
+        elif self._mode=='MDRPDWS' or self._mode=='MDRPD':
+            pass
+        else:
+            raise NotImplementedError(f"Unknown mode: {self._mode}")
+    def to_csv(self, fn, **kwargs):
+        with open(fn,'w', newline='') as f:
+            csw = csv.writer(f)
+            if self._mode=='1DCPD':
+                csw.writerow([self.x_name,"Model Response"])
+                for i,x in enumerate(self.x_vals):
+                    csw.writerow([x,self.response[i]])
+            elif self._mode=='2DCPD':
+                csw.writerow([f"{self.x_name}/{self.y_name}"]+self.y_vals)
+                for i,rv in enumerate(self.x_vals):
+                    csw.writerow([rv]+[self.response[i,j] for j in range(len(self.y_vals))])
+            elif self._mode=='2DCRPD':
+                csw.writerow([f"{self.y_name}/{self.x_name}"]+self.x_vals)
+                for i,yv in enumerate(list(set([x[1] for x in self.response]))):
+                    row = [yv]
+                    for j, xv in enumerate(self.x_vals):
+                        r = [x for x in self.response if x[0]==xv and x[1]==yv]
+                        if r:
+                            row.append(r[0][2])
+                        else:
+                            row.append('NA')
+                    csw.writerow(row)
+            elif self._mode=='MDRPDWS' or self._mode=='MDRPD':
+                csw.writerow([f"{self.x_name}", f"{self.y_name}", "Model Response"])
+                for l in self.response:
+                    csw.writerow(l)
+            else:
+                raise NotImplementedError(f"Unknown mode: {self._mode}")
 
 def _main(**args):
     pass
