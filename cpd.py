@@ -39,6 +39,7 @@ import csv
 import numpy as np
 import pandas as pd
 from sklearn.inspection import partial_dependence
+import matplotlib.pyplot as plt
 
 class Partial_Dependence():
     def __init__(self, model, data, cat_features=[], real_features=[], **kwargs):
@@ -67,6 +68,8 @@ class Partial_Dependence():
             self._run_MDRPD(model, data, real_features)
         else:
             raise NotImplementedError("Requested combination of variables not implemented")
+    def __repr__(self):
+        return self._ascii()
     def _search_features(self, data, feature_key):
         return [x for x in data.columns if x.startswith(feature_key)]
     def _feature_cleanup(self, feature_key, feature_list):
@@ -264,20 +267,30 @@ class Partial_Dependence():
         return s
     def print_ascii(self, **kwargs):
         print(self._ascii(**kwargs))
-    def __repr__(self):
-        return self._ascii()
-    def plot(self, fn, **kwargs):
+    def plot(self, fn=None, **kwargs):
         #TODO
+        fig, ax = plt.subplots()
         if self._mode=='1DCPD':
-            pass
+            bar = ax.bar(self.x_vals, self.response)
         elif self._mode=='2DCPD':
-            pass
+            cmap = kwargs['cmap'] if 'cmap' in kwargs else 'RdYlGn'
+            im = ax.imshow(self.response, cmap=cmap)
+            # For the heatmap, we need to transpose the x and y labels
+            ax.set_xticks(np.arange(len(self.y_vals)))
+            ax.set_yticks(np.arange(len(self.x_vals)))
+            ax.set_xticklabels(self.y_vals)
+            ax.set_yticklabels(self.x_vals)
+            cbar = ax.figure.colorbar(im, ax=ax)
         elif self._mode=='2DCRPD':
             pass
         elif self._mode=='MDRPDWS' or self._mode=='MDRPD':
             pass
         else:
             raise NotImplementedError(f"Unknown mode: {self._mode}")
+        if fn:
+            plt.saveimage(fn)
+        else:
+            plt.show()
     def to_gnuplot(self, fn, **kwargs):
         #TODO
         if self._mode=='1DCPD':

@@ -2,7 +2,7 @@
 
 # MIT License
 #
-#Copyright <YEAR> Filipe Teixeira
+#Copyright 2020 Filipe Teixeira
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -56,4 +56,6 @@ pd_data = Partial_Dependence(rf_model, X_train, ['sex','race'])
 
 pd_data.print_ascii()
 
-pd_data.to_csv('tmp.csv')
+#pd_data.to_csv('tmp.csv')
+
+pd_data.plot() 
