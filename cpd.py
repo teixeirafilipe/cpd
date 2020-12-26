@@ -40,6 +40,7 @@ import numpy as np
 import pandas as pd
 from sklearn.inspection import partial_dependence
 import matplotlib.pyplot as plt
+import matplotlib.tri as tri
 
 class Partial_Dependence():
     def __init__(self, model, data, cat_features=[], real_features=[], **kwargs):
@@ -152,21 +153,32 @@ class Partial_Dependence():
         self.y_name = feature_key.capitalize() + ' Value'
     def _run_MDRPD(self, model, data, real_features):
         # set the data so that all features share the same range
-        pseudo_data = data.copy()
-        bounds=( min(data.loc[:,tuple(real_features)].min()), max(data.loc[:,tuple(real_features)].max()))
-        for name in real_features:
-            pseudo_data[name][0]=bounds[0]
-            pseudo_data[name][1]=bounds[1]
-        # Saving the respons to a list x,y,model_response
+        #pseudo_data = data.copy()
+        #y_min =  np.inf
+        #y_max = -np.inf
+        #print(data)
+        #for name in real_features:
+        #    print(f"{name}: {min(data[name])} - {max(data[name])}")
+        #    if min(data[name])< y_min: y_min = min(data[name])
+        #    if max(data[name])> y_max: y_max = max(data[name])
+        #print(y_min, y_max)
+        #npoints = len(data)
+        #for name in real_features:
+        #    pseudo_data[name]=np.linspace(y_min,y_max,npoints)
+        #    #pseudo_data[name][0]=y_min
+        #    #pseudo_data[name][1]=y_max
+        # Saving the response to a list x,y,model_response
         response = list()
         try:
             x_vals = [int(x.split('_')[-1]) for x in real_features]
         except:
             raise TypeError("Unsuported format of real variables.")
         for i, xn in enumerate(real_features):
-            pdep = partial_dependence(model, pseudo_data, [xn])
+            #pdep = partial_dependence(model, pseudo_data, [xn])
+            pdep = partial_dependence(model, data, [xn])
             for j,ypos in enumerate(pdep[1][0]):
                 response.append([x_vals[i], ypos, pdep[0][0][j]])
+            #print(x_vals[i],min(r[1] for r in response),max(r[1] for r in response))
         # expose data to the object's namespace
         self.response = np.array(response)
         self.x_name = self._find_common_prefix(real_features)
@@ -268,7 +280,6 @@ class Partial_Dependence():
     def print_ascii(self, **kwargs):
         print(self._ascii(**kwargs))
     def plot(self, fn=None, **kwargs):
-        #TODO
         fig, ax = plt.subplots()
         if self._mode=='1DCPD':
             bar = ax.bar(self.x_vals, self.response)
@@ -282,9 +293,32 @@ class Partial_Dependence():
             ax.set_yticklabels(self.x_vals)
             cbar = ax.figure.colorbar(im, ax=ax)
         elif self._mode=='2DCRPD':
-            pass
+            for cn in self.x_vals:
+                xy = [r for r in self.response if r[0]==cn ]
+                ax.plot([r[1] for r in xy],[r[2] for r in xy], label=cn)
+            ax.set_xlabel(self.y_name)
+            ax.set_ylabel("Model Response")
+            ax.legend(title=self.x_name)
         elif self._mode=='MDRPDWS' or self._mode=='MDRPD':
-            pass
+            x_pts = [float(r[0]) for r in self.response]
+            y_pts = [r[1] for r in self.response]
+            z_pts = [r[2] for r in self.response]
+            x_min = kwargs['xlim'][0] if 'xlim' in kwargs else min(x_pts)
+            x_max = kwargs['xlim'][1] if 'xlim' in kwargs else max(x_pts)
+            y_min = kwargs['ylim'][0] if 'ylim' in kwargs else min(y_pts)
+            y_max = kwargs['ylim'][1] if 'ylim' in kwargs else max(y_pts)
+            cmap = kwargs['cmap'] if 'cmap' in kwargs else 'RdYlGn'
+            npoints = kwargs['npoints'] if 'npoints' in kwargs else 1024
+            xi = np.linspace(x_min,x_max, npoints)
+            yi = np.linspace(y_min,y_max, npoints)
+            tt = tri.Triangulation(x_pts,y_pts)
+            interpolator = tri.LinearTriInterpolator(tt, z_pts)
+            Xi, Yi = np.meshgrid(xi, yi)
+            zi = interpolator(Xi, Yi)
+            grph = ax.contourf(xi, yi, zi, cmap= cmap)
+            fig. colorbar(grph)
+            ax.set_xlabel(self.x_name)
+            ax.set_ylabel(self.y_name)
         else:
             raise NotImplementedError(f"Unknown mode: {self._mode}")
         if fn:

@@ -56,5 +56,7 @@ pd_data = Partial_Dependence(rf_model, X_train, ['race'], ['age'])
 
 pd_data.print_ascii()
 
-pd_data.to_csv("tmp.csv")
+#pd_data.to_csv("tmp.csv")
+
+pd_data.plot()
 

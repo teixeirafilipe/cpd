@@ -52,10 +52,6 @@ print(X_train)
 
 pd_data = Partial_Dependence(rf_model, X_train, real_features=[f"Spec_{x}" for x in range(200,221)])
 
-print(pd_data.x_name)
-print(pd_data.x_vals)
+print(pd_data)
 
-print(pd_data.y_name)
-print(pd_data.y_vals)
-
-print(pd_data.response)
+pd_data.plot()
