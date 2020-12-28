@@ -51,14 +51,27 @@ package management:
 
 ## Instalation
 In order to use CPD, you just need to have a copy of cpd.py on your project's
-folder and import it to your code. A library install (via pip or setuptools) is
-envisaged for the near future, but not currently implemented.
+folder and import it to your code. 
+
+Alternatively, you can clone this repository and use setuptools:
+
+```
+python setup.py
+```
+
+If you whish to further edit this work, you might prefer to put a linked version
+of ```cpd.py``` on your PYTHON_LIB_PATH, using:
+
+```
+cd cpd
+pip install -e .
+```
 
 ## How to Use
 After importing, the ```cpd.Partial_Dependence``` class becomes available. This
 class is initialized using a similar nomenclature to that of
 [Scikit-learn](https://scikit-learn.org)'s
-```sklearn.inpection.partial_dependence``` function. 
+
 
 ## How to Cite
 TBA
