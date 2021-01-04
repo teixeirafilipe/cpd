@@ -41,6 +41,19 @@ from sklearn.inspection import partial_dependence
 import matplotlib.pyplot as plt
 import matplotlib.tri as tri
 
+cite = "F. Teixeira, CPD - Complex Partial Dependence for Scikit-learn, 2020 (https://github.com/teixeirafilipe/cpd)"
+
+bibtex = """
+@Electronic{Teixeira2020CPD,
+  author    = {Filipe Teixeira},
+  title     = {CPD - Complex Partial Dependence for Scikit-learn},
+  year      = {2020},
+  date      = {2020-12-19},
+  url       = {https://github.com/teixeirafilipe/cpd},
+  urldate   = {2021-01-04}
+}
+"""
+
 class Partial_Dependence():
     def __init__(self, model, data, cat_features=[], real_features=[], **kwargs):
         ncf=len(cat_features)

@@ -50,7 +50,7 @@ print(f"Score on the Test Set:  {rf_model.score(X_test,y_test):6.4f}")
 
 print(X_train)
 
-pd_data = Partial_Dependence(rf_model, X_train, real_features=[f"Spec_{x}" for x in range(200,221)])
+pd_data = Partial_Dependence(rf_model, X_train, real_features=[f"Spec_{x}" for x in range(250,300)])
 
 print(pd_data)
 

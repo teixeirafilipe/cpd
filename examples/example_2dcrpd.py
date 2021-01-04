@@ -52,7 +52,7 @@ rf_model.fit(X_train, y_train)
 print(f"Score on the Train Set: {rf_model.score(X_train,y_train):+6.4f}")
 print(f"Score on the Test Set:  {rf_model.score(X_test,y_test):+6.4f}")
 
-pd_data = Partial_Dependence(rf_model, X_train, ['race'], ['age'])
+pd_data = Partial_Dependence(rf_model, X_train, ['sex'], ['age'])
 
 pd_data.print_ascii()
 
