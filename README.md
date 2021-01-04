@@ -1,7 +1,7 @@
 # CPD - Complex Partial Dependence for Scikit-learn
 
 
-## About PhiMD
+## About CPD
 
 CPD is a small Python module which generates partial dependence graphics and
 tables for models.
