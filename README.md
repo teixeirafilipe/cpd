@@ -175,8 +175,8 @@ pd_data.plot()
 
 ```
 
-When using two real variables, the partial dependence is ploted as a
-heatmap, with a colorbar showing the magnitude of the model's response.
+In this mode, the partial dependence is ploted as lines, with one line per value
+of the categorical variable.
 
 ![Figure of a two-dimensional real-categorical partial dependence](./figures/example_2dcrpd.png)
 
