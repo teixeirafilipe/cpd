@@ -22,11 +22,12 @@ this, for improved performance). CPD allows enquires of the partial dependence
 in the following cases:
 1. one categorical variable
 2. two categorical variables
-3. one categorical variable _versus_ one real variable
-4. a set of real variables closely related
+3. two real variables
+4. one categorical variable _versus_ one real variable
+5. a set of real variables closely related
 
-Examples of these four cases are given in the ```examples``` folder. The first
-two use cases are self-evident. The third case compares the model's response
+Examples of these five cases are given in the ```examples``` folder. The first
+three use cases are self-evident. The forth case compares the model's response
 with respect to one variable for each of the possible values of a categorical
 variable.
 
@@ -39,6 +40,12 @@ named, for example, *IR_610*, *IR_611*, etc, were the number after the last
 underscore marks the position in the spectrum. CPD allows one to have a "bird's
 eye" view of the model's partial dependence on the IR sepctrum as a whole by
 combining the individual responses of each of the *IR_* variables.
+
+An unintended advantage of using CPD is the possibility of saving the partial
+dependence object itself (using ```pickle```, for example). This allows for
+separation between calculating the partial dependence data (usually a
+computationally expensive procedure) and rendering it in the form of tables,
+graphics, etc.
 
 ## System Requirements
 PhiMD is written in Python, and should work with any recent python distribution,
@@ -70,7 +77,33 @@ pip install -e .
 ## How to Use
 After importing, the ```cpd.Partial_Dependence``` class becomes available. This
 class is initialized using a similar nomenclature to that of
-[Scikit-learn](https://scikit-learn.org)'s
+[Scikit-learn](https://scikit-learn.org)'s. The examples bellow are adapted from
+the ones you can find in the ```examples``` folder.
+
+### Partial Dependence on One Categorical Variable
+In this example, our model is a regressor of _earn_ (Real) wiht respect to
+_height_ (R),_sex_ (Categorical),"ed" (Integer),"age" (I), and "race"(C). For
+the purpose of CPD, Integer variables are automatically converted into Real.
+```
+from cpd import Partial_Dependence
+
+pd_data = Partial_Dependence(myModel, X_train, ['race'])
+
+# print will print an ascii table of the model
+print(pd_data)
+
+# we can save the data as a csv file
+pd_data.to_csv('model_response_race.csv')
+
+# finally, we can plot the data using matplotlib
+pd_data.plot()
+
+```
+
+When using one categorical variable, the partial dependence is ploted as a bar
+graph.
+
+![Figure of a one-dimensional categorical partial dependence](./figures/example_1dcpd.png)
 
 
 ## How to Cite
