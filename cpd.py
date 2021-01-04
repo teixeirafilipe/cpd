@@ -24,9 +24,8 @@
 
 #TODO:
 # * Print PD as a LaTeX table
-# * Plot PD using MatPlotLib
-# * Save MatPlotLib's plot of PD
 # * Output a GnuPlot script for the plot
+# * Save MatPlotLib's plot of PD (can be done from the interactive window)
 
 """
 CPD - Complex Partial Dependence for Scikit-learn
@@ -52,7 +51,7 @@ class Partial_Dependence():
             self._mode = '1DCPD'
             self._run_1DCPD(model,data,cat_features[0])
         elif ncf == 2 and nrf == 0:
-            # 2 dimensional PD two real variables
+            # 2 dimensional PD two categorical variables
             self._mode = '2DCPD'
             self._run_2DCPD(model,data,cat_features)
         elif ncf == 1 and nrf == 1:
@@ -63,6 +62,10 @@ class Partial_Dependence():
             # multi-dimensional real PD with search
             self._mode = 'MDRPDWS' 
             self._run_MDRPDWS(model, data, real_features[0])
+        elif ncf == 0 and nrf == 2:
+            # 2 dimensional PD two real variables
+            self._mode = '2DRPD'
+            self._run_2DRPD(model, data, real_features)
         elif ncf == 0 and nrf > 1:
             # multi-dimensional real PD without search
             self._mode = 'MDRPD' 
@@ -146,6 +149,24 @@ class Partial_Dependence():
         self.x_vals = x_vals
         self.y_name = real_feature.capitalize()
         self.y_vals = None
+    def _run_2DRPD(self, model, data, real_features):
+        #x_names = self._search_features(data, cat_feature)
+        #x_vals  = self._feature_cleanup(cat_feature, x_names) 
+        response = list()
+        # set the data so that all features share the same range
+        #pseudo_data = data.copy()
+        #pseudo_data.loc[0, real_feature]=data[real_feature].min()
+        #pseudo_data.loc[1, real_feature]=data[real_feature].max()
+        pdep = partial_dependence(model, data, real_features)
+        for i,x in enumerate(pdep[1][0]):
+            for j,y in enumerate(pdep[1][1]):
+                response.append([x,y,pdep[0][0][i,j]])
+        # expose data to the object's namespace
+        self.response = response
+        self.x_name = real_features[0].capitalize()
+        self.x_vals = pdep[1][0]
+        self.y_name = real_features[1].capitalize()
+        self.y_vals = pdep[1][1]
     def _run_MDRPDWS(self, model, data, feature_key):
         feature_names = self._search_features(data,feature_key)
         self._run_MDRPD(model, data, self._search_features(data,feature_key))
@@ -198,7 +219,7 @@ class Partial_Dependence():
             o.append(2+max(8,len(self.y_name)))
             for xv in self.x_vals:
                 o.append(2+max(8,len(xv)))
-        elif self._mode=='MDRPDWS' or self._mode=='MDRPD':
+        elif self._mode=='MDRPDWS' or self._mode=='MDRPD' or self._mode=='2DRPD':
             o.append(2+max(8,len(self.x_name)))
             o.append(2+max(8,len(self.y_name)))
             o.append(2+max(8,len("Model Response")))
@@ -258,7 +279,7 @@ class Partial_Dependence():
             for cw in col_widths:
                 s += '-'*cw + ' '
             s += '\n'
-        elif self._mode=='MDRPDWS' or self._mode=='MDRPD':
+        elif self._mode=='MDRPDWS' or self._mode=='MDRPD' or self._mode=='2DRPD':
             for cw in col_widths:
                 s += '-'*cw + ' '
             s += '\n'
@@ -266,6 +287,9 @@ class Partial_Dependence():
             s += f"{self.y_name:^{col_widths[1]}s} "
             t="Model Response"
             s += f"{t:^{col_widths[2]}s} "
+            s += '\n'
+            for cw in col_widths:
+                s += '-'*cw + ' '
             s += '\n'
             for l in self.response:
                 for i in range(len(col_widths)):
@@ -292,6 +316,8 @@ class Partial_Dependence():
             ax.set_xticklabels(self.y_vals)
             ax.set_yticklabels(self.x_vals)
             cbar = ax.figure.colorbar(im, ax=ax)
+            ax.set_xlabel(self.y_name)
+            ax.set_ylabel(self.x_name)
         elif self._mode=='2DCRPD':
             for cn in self.x_vals:
                 xy = [r for r in self.response if r[0]==cn ]
@@ -301,6 +327,26 @@ class Partial_Dependence():
             ax.legend(title=self.x_name)
         elif self._mode=='MDRPDWS' or self._mode=='MDRPD':
             x_pts = [float(r[0]) for r in self.response]
+            y_pts = [r[1] for r in self.response]
+            z_pts = [r[2] for r in self.response]
+            x_min = kwargs['xlim'][0] if 'xlim' in kwargs else min(x_pts)
+            x_max = kwargs['xlim'][1] if 'xlim' in kwargs else max(x_pts)
+            y_min = kwargs['ylim'][0] if 'ylim' in kwargs else min(y_pts)
+            y_max = kwargs['ylim'][1] if 'ylim' in kwargs else max(y_pts)
+            cmap = kwargs['cmap'] if 'cmap' in kwargs else 'RdYlGn'
+            npoints = kwargs['npoints'] if 'npoints' in kwargs else 1024
+            xi = np.linspace(x_min,x_max, npoints)
+            yi = np.linspace(y_min,y_max, npoints)
+            tt = tri.Triangulation(x_pts,y_pts)
+            interpolator = tri.LinearTriInterpolator(tt, z_pts)
+            Xi, Yi = np.meshgrid(xi, yi)
+            zi = interpolator(Xi, Yi)
+            grph = ax.contourf(xi, yi, zi, cmap= cmap)
+            fig. colorbar(grph)
+            ax.set_xlabel(self.x_name)
+            ax.set_ylabel(self.y_name)
+        elif self._mode=='2DRPD':
+            x_pts = [r[0] for r in self.response]
             y_pts = [r[1] for r in self.response]
             z_pts = [r[2] for r in self.response]
             x_min = kwargs['xlim'][0] if 'xlim' in kwargs else min(x_pts)
@@ -371,7 +417,7 @@ class Partial_Dependence():
                         else:
                             row.append('NA')
                     csw.writerow(row)
-            elif self._mode=='MDRPDWS' or self._mode=='MDRPD':
+            elif self._mode=='MDRPDWS' or self._mode=='MDRPD' or self._mode=='2DRPD':
                 csw.writerow([f"{self.x_name}", f"{self.y_name}", "Model Response"])
                 for l in self.response:
                     csw.writerow(l)
