@@ -259,12 +259,12 @@ These are some features planned for the near future:
 
 ## How to Cite
 If you find CPD usefull for your research, please cite this gitHub repositoty.
-using the following text: Filipe Teixeira. (2021, January 5). teixeirafilipe/cpd: Inital release (Version v0.1.0). Zenodo. http://doi.org/10.5281/zenodo.4419860
-
-Scikit-learn*, **2020** (https://github.com/teixeirafilipe/cpd). This citation
-string is available as ```cpd.cite```. 
-The following BibTeX entry should provide you with all the needed information
-(also available on the module as ```cpd.bibtex```):
+using the following text: Filipe Teixeira. (2021, January 5).
+teixeirafilipe/cpd: Inital release (Version v0.1.0). Zenodo.
+http://doi.org/10.5281/zenodo.4419860 .com/teixeirafilipe/cpd). This citation
+string is available as ```cpd.cite```.  The following BibTeX entry should
+provide you with all the needed information (also available on the module as
+```cpd.bibtex```):
 
 ```
 @software{filipe_teixeira_2021_4419860,
