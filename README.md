@@ -259,20 +259,23 @@ These are some features planned for the near future:
 
 ## How to Cite
 If you find CPD usefull for your research, please cite this gitHub repositoty.
-using the following text: F. Teixeira, *CPD - Complex Partial Dependence for
+using the following text: Filipe Teixeira. (2021, January 5). teixeirafilipe/cpd: Inital release (Version v0.1.0). Zenodo. http://doi.org/10.5281/zenodo.4419860
+
 Scikit-learn*, **2020** (https://github.com/teixeirafilipe/cpd). This citation
 string is available as ```cpd.cite```. 
 The following BibTeX entry should provide you with all the needed information
 (also available on the module as ```cpd.bibtex```):
 
 ```
-@Electronic{Teixeira2020CPD,
-  author    = {Filipe Teixeira},
-  title     = {CPD - Complex Partial Dependence for Scikit-learn},
-  year      = {2020},
-  date      = {2020-12-19},
-  url       = {https://github.com/teixeirafilipe/cpd},
-  urldate   = {2021-01-04}
+@software{filipe_teixeira_2021_4419860,
+  author       = {Filipe Teixeira},
+  title        = {teixeirafilipe/cpd: Inital release},
+  month        = jan,
+  year         = 2021,
+  publisher    = {Zenodo},
+  version      = {v0.1.0},
+  doi          = {10.5281/zenodo.4419860},
+  url          = {https://doi.org/10.5281/zenodo.4419860}
 }
 ```
 
