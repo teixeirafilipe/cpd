@@ -31,6 +31,7 @@ desc['classifiers']=[
 ]
 #desc['data_files']=[]
 #desc['packages']=[]
+desc['install_requires']=['numpy','scikit-learn','matplotlib','pandas']
 desc['py_modules']=['cpd']
 #desc['scripts']=[]
 #desc['ext_modules']=[]
